@@ -6,6 +6,10 @@ A minimal ESP32 starter for connecting devices to [jettyd.com](https://jettyd.co
 
 jettyd is IoT middleware that bridges your ESP32 devices to AI agents, dashboards, and automation rules. Your device sends telemetry → jettyd routes it → your agents and dashboards respond.
 
+## SDK
+
+This template uses the [jettyd-firmware SDK](https://github.com/jettydiot/jettyd-firmware) — the open-source ESP32 device SDK for jettyd. The SDK handles WiFi, MQTT, provisioning, telemetry, device shadow, OTA, and the JettyScript VM.
+
 ## Quick start
 
 1. **Clone this repo**
