@@ -1,0 +1,25 @@
+# Example device configuration
+# See docs.jettyd.com for full reference
+
+name: "my-sensor-v1"
+version: "1.0.0"
+target: "esp32s3"
+description: "Example sensor device"
+
+drivers:
+  - name: dht22
+    instance: "air"
+    config:
+      pin: 4
+
+defaults:
+  heartbeat_interval: 60
+  report_metrics:
+    - "air.temperature"
+    - "air.humidity"
+    - "system.battery"
+    - "system.rssi"
+
+mqtt:
+  keepalive: 60
+  qos: 1
