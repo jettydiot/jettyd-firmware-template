@@ -85,6 +85,90 @@ void jettyd_register_drivers(void)
 
 That's it. The driver publishes `air.temperature` and `air.humidity` to jettyd automatically on every heartbeat.
 
+
+---
+
+## Controlling an LED
+
+### Step 1 — Wire the LED
+
+Connect an LED (with a 330Ω resistor in series) from GPIO 8 to GND.
+
+### Step 2 — Register the LED driver
+
+In `jettyd-sdk/jettyd/src/driver_registry.c`:
+
+```c
+#include "led.h"
+
+void jettyd_register_drivers(void)
+{
+    led_config_t status_led = { .pin = 8, .active_high = true };
+    led_register("status", &status_led);
+}
+```
+
+### Step 3 — Control it via jettyd
+
+```bash
+# Turn on
+curl -X POST https://api.jettyd.com/v1/devices/DEVICE_ID/commands \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "led.on"}'
+
+# Blink 3 times
+curl -X POST https://api.jettyd.com/v1/devices/DEVICE_ID/commands \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "led.blink", "params": {"interval_ms": 300, "count": 3}}'
+
+# Turn off
+curl -X POST https://api.jettyd.com/v1/devices/DEVICE_ID/commands \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "led.off"}'
+```
+
+Or ask your OpenClaw agent:
+> *"Blink the status LED 3 times."*
+
+---
+
+## Using a button
+
+### Step 1 — Wire the button
+
+Connect a momentary push button between GPIO 9 and GND. The driver uses the internal pull-up.
+
+### Step 2 — Register the button driver
+
+```c
+#include "button.h"
+
+void jettyd_register_drivers(void)
+{
+    button_config_t btn = { .pin = 9, .active_low = true, .debounce_ms = 50 };
+    button_register("main", &btn);
+}
+```
+
+### Step 3 — Read button events
+
+The button publishes two metrics:
+- `main.press` — 1 while held, 0 when released
+- `main.press_count` — total presses since boot
+
+```bash
+curl https://api.jettyd.com/v1/devices/DEVICE_ID/shadow \
+  -H "Authorization: Bearer YOUR_API_KEY"
+# → {"reported": {"main.press": 0, "main.press_count": 7}}
+```
+
+Or use webhooks to trigger an automation whenever the button is pressed.
+
+---
+
 ### Available drivers
 
 | Driver | Sensors | Include | Config |
@@ -97,6 +181,8 @@ That's it. The driver publishes `air.temperature` and `air.humidity` to jettyd a
 | `soil_moisture` | Soil moisture (ADC) | `soil_moisture.h` | `{ .adc_pin = N }` |
 | `relay` | Relay output | `relay.h` | `{ .pin = N, .active_high = true }` |
 | `pwm_output` | PWM actuator | `pwm_output.h` | `{ .pin = N, .freq_hz = 1000 }` |
+| `led` | LED output (on/off/blink) | `led.h` | `{ .pin = N, .active_high = true }` |
+| `button` | Button/switch input | `button.h` | `{ .pin = N, .active_low = true, .debounce_ms = 50 }` |
 
 ---
 

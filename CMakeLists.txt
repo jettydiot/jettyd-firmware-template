@@ -22,6 +22,8 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/pwm_output
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/hcsr04
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/ina219
+    ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/led
+    ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/button
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
