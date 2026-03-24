@@ -18,37 +18,149 @@ cd my-device
 # 2. Fetch the jettyd SDK
 make setup
 
-# 3. Configure — edit sdkconfig.defaults
-#    Set your WiFi credentials and fleet token:
-#
+# 3. Edit sdkconfig.defaults — set your credentials:
 #    CONFIG_JETTYD_FLEET_TOKEN="ft_xxxxxxxxxxxxxxxxxxxx"
 #    CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
 #    CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
 
 # 4. Build and flash
+rm -f sdkconfig   # always start clean after editing defaults
 idf.py build flash monitor
 ```
 
-On first boot the device:
-1. Reads config from `sdkconfig.defaults` → writes to NVS
-2. Connects to WiFi
-3. Sends the fleet token to jettyd and receives a device key
-4. Starts publishing telemetry via MQTT
+On first boot the device connects to WiFi, provisions itself with jettyd, and enters its main loop. You'll see:
 
-After ~10 seconds it appears in your device list at `api.jettyd.com/v1/devices`.
+```
+I (13600) jettyd:   Jettyd running
+I (13600) jettyd:   Drivers: 0
+I (13600) jettyd:   Rules: 0
+```
+
+---
+
+## Adding a sensor
+
+### Step 1 — Wire the sensor
+
+Connect your DHT22 data pin to a GPIO (e.g. GPIO 4).
+
+### Step 2 — Register the driver in `main/main.c`
+
+```c
+#include "jettyd.h"
+#include "dht22.h"          // ← add this
+
+void app_main(void)
+{
+    jettyd_config_t config = {
+        .device_type            = CONFIG_JETTYD_DEVICE_TYPE,
+        .firmware_version       = CONFIG_JETTYD_FIRMWARE_VERSION,
+        .heartbeat_interval_sec = 60,
+        .mqtt_keepalive         = 60,
+        .mqtt_qos               = 1,
+        .mqtt_buffer_on_disconnect = true,
+        .mqtt_max_buffer_size   = 16,
+        .has_battery            = false,
+        .battery_adc_pin        = -1,
+        .status_led_pin         = -1,
+        .wake_on_pin            = -1,
+    };
+
+    ESP_ERROR_CHECK(jettyd_init(&config));
+    ESP_ERROR_CHECK(jettyd_start());
+}
+```
+
+Open `jettyd/src/driver_registry.c` in the SDK and add your driver:
+
+```c
+#include "dht22.h"
+
+void jettyd_register_drivers(void)
+{
+    dht22_config_t air_cfg = { .pin = 4 };
+    dht22_register("air", &air_cfg);
+}
+```
+
+That's it. The driver publishes `air.temperature` and `air.humidity` to jettyd automatically on every heartbeat.
+
+### Available drivers
+
+| Driver | Sensors | Include | Config |
+|--------|---------|---------|--------|
+| `dht22` | Temperature, humidity | `dht22.h` | `{ .pin = N }` |
+| `ds18b20` | Temperature (1-Wire) | `ds18b20.h` | `{ .pin = N }` |
+| `bme280` | Temperature, humidity, pressure | `bme280.h` | `{ .i2c_port = 0, .sda = 21, .scl = 22, .addr = 0x76 }` |
+| `hcsr04` | Distance (ultrasonic) | `hcsr04.h` | `{ .trig_pin = N, .echo_pin = M }` |
+| `ina219` | Current, voltage, power | `ina219.h` | `{ .i2c_port = 0, .sda = 21, .scl = 22 }` |
+| `soil_moisture` | Soil moisture (ADC) | `soil_moisture.h` | `{ .adc_pin = N }` |
+| `relay` | Relay output | `relay.h` | `{ .pin = N, .active_high = true }` |
+| `pwm_output` | PWM actuator | `pwm_output.h` | `{ .pin = N, .freq_hz = 1000 }` |
+
+---
+
+## Connecting to OpenClaw
+
+Once your device is provisioned, connect it to your OpenClaw agent in seconds.
+
+### 1. Install the jettyd skill (coming soon to ClawHub)
+
+For now, query the API directly from any OpenClaw skill or tool:
+
+```bash
+# List your devices
+curl https://api.jettyd.com/v1/devices \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Read the latest sensor readings (device shadow)
+curl https://api.jettyd.com/v1/devices/DEVICE_ID/shadow \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Send a command (e.g. toggle a relay)
+curl -X POST https://api.jettyd.com/v1/devices/DEVICE_ID/commands \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "relay.on", "params": {"duration": 5000}}'
+```
+
+### 2. Ask your agent about your devices
+
+Once the OpenClaw jettyd skill is available, you'll be able to do things like:
+
+```
+You: What's the temperature in the greenhouse?
+Agent: The air sensor reads 24.3°C and 67% humidity. Last updated 2 minutes ago.
+
+You: Turn on the irrigation relay for 30 seconds.
+Agent: Done — relay activated, will auto-off in 30 seconds.
+```
+
+### 3. Your device's API keys
+
+| Key | Value |
+|-----|-------|
+| API key | `tk_jettyd_tom_dev_key_2026` |
+| Tenant ID | `2bf59dbe-e121-4597-84f9-1f4ded2437fa` |
+| Device ID | `930c4077-fbe7-48f2-824c-c9e806175f58` |
+
+---
 
 ## Configuration (sdkconfig.defaults)
-
-All config lives in `sdkconfig.defaults`. Edit before building:
 
 | Key | Description |
 |-----|-------------|
 | `CONFIG_JETTYD_FLEET_TOKEN` | Fleet token from api.jettyd.com/v1/fleet-tokens |
-| `CONFIG_JETTYD_WIFI_SSID` | Your WiFi network name |
-| `CONFIG_JETTYD_WIFI_PASSWORD` | Your WiFi password |
+| `CONFIG_JETTYD_WIFI_SSID` | WiFi network name |
+| `CONFIG_JETTYD_WIFI_PASSWORD` | WiFi password |
 | `CONFIG_JETTYD_MQTT_URI` | MQTT broker (default: `mqtt://mqtt.jettyd.com:1883`) |
 | `CONFIG_JETTYD_FIRMWARE_VERSION` | Version string reported to the platform |
 | `CONFIG_JETTYD_DEVICE_TYPE` | Device type slug from your jettyd account |
+
+> **Always delete `sdkconfig` before rebuilding after editing `sdkconfig.defaults`:**
+> ```bash
+> rm sdkconfig && idf.py build
+> ```
 
 ## SDK
 
@@ -58,8 +170,8 @@ This template uses the [jettyd-firmware SDK](https://github.com/jettydiot/jettyd
 
 | Chip | Status |
 |------|--------|
-| ESP32-S3 | ✅ Primary target |
-| ESP32-C3 | ✅ Supported |
+| ESP32-C3 | ✅ Tested |
+| ESP32-S3 | ✅ Supported |
 | ESP32-C6 | ✅ Supported |
 | ESP32 (classic) | ⚠️ Untested |
 
