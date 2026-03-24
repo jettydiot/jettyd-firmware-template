@@ -186,6 +186,104 @@ Or use webhooks to trigger an automation whenever the button is pressed.
 
 ---
 
+
+---
+
+## JettyScript — rules that run on the device
+
+JettyScript is a lightweight rules engine that runs on the ESP32 itself — no cloud round-trip needed. Rules evaluate sensor readings locally and fire alerts when thresholds are crossed.
+
+### Example: temperature alerts
+
+This config fires a warning when temperature exceeds 28°C, and a critical alert below 5°C:
+
+```json
+{
+  "rules": [
+    {
+      "id": "temp-too-hot",
+      "when": {
+        "type": "threshold",
+        "sensor": "air.temperature",
+        "op": ">",
+        "value": 28,
+        "debounce": 30
+      },
+      "then": [
+        {
+          "action": "publish_alert",
+          "params": {
+            "message": "Temperature too high: {{air.temperature}}°C",
+            "severity": "warning"
+          }
+        }
+      ]
+    },
+    {
+      "id": "temp-too-cold",
+      "when": {
+        "type": "threshold",
+        "sensor": "air.temperature",
+        "op": "<",
+        "value": 5,
+        "debounce": 30
+      },
+      "then": [
+        {
+          "action": "publish_alert",
+          "params": {
+            "message": "Temperature too low: {{air.temperature}}°C",
+            "severity": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+**`debounce: 30`** — the condition must hold for 30 seconds before firing. Prevents alert spam from noisy sensors.
+
+### Push the config to your device
+
+```bash
+curl -X PUT https://api.jettyd.com/v1/devices/DEVICE_ID/config \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @rules.json
+```
+
+The platform pushes the config to the device over MQTT. The device validates it, applies it, and ACKs — no reflashing needed.
+
+### Forward alerts to a webhook
+
+When a rule fires, it publishes an alert event on the platform. Subscribe a webhook to receive it:
+
+```bash
+curl -X POST https://api.jettyd.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Temperature alerts → Slack",
+    "url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+    "events": ["device.alert.warning", "device.alert.critical"],
+    "secret": "your-signing-secret"
+  }'
+```
+
+Every alert the device fires hits your webhook within milliseconds. The payload is HMAC-signed so you can verify it came from jettyd.
+
+### Supported rule conditions
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `threshold` | Single value above/below a limit | `temperature > 28` |
+| `range` | Value leaves a safe range | `humidity` outside 30–70% |
+| `compound` | AND/OR of multiple conditions | temp high AND humidity high |
+| `time_window` | Only active during certain hours | alert only during work hours |
+| `cron` | Fire on a schedule | report every hour |
+
+---
 ## Connecting to OpenClaw
 
 Once your device is provisioned, connect it to your OpenClaw agent in seconds.
