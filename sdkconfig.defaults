@@ -1,0 +1,9 @@
+# jettyd provisioning — override in device.yaml or menuconfig
+# CONFIG_JETTYD_FLEET_TOKEN="ft_xxxxxxxxxxxxxxxxxxxx"
+# CONFIG_JETTYD_MQTT_URI="mqtt://mqtt.jettyd.com:1883"
+# CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
+# CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
+
+# ESP32 defaults
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+CONFIG_MQTT_TASK_STACK_SIZE=6144

@@ -1,17 +1,29 @@
-# Example device configuration
-# See docs.jettyd.com for full reference
+# jettyd device configuration
+# Edit the fields below, then: idf.py build flash monitor
 
+# ── Required: Provisioning ────────────────────────────────────────────────────
+jettyd:
+  fleet_token: "ft_loV4ABpFL_Qsvf5_HwuUKsXOjf_YQ1Pnx5xoh_875Z0"   # from api.jettyd.com
+  mqtt_uri: "mqtt://mqtt.jettyd.com:1883"
+
+# ── Required: WiFi ────────────────────────────────────────────────────────────
+wifi:
+  ssid: "YourNetworkName"
+  password: "YourNetworkPassword"
+
+# ── Device identity ───────────────────────────────────────────────────────────
 name: "my-sensor-v1"
 version: "1.0.0"
 target: "esp32s3"
-description: "Example sensor device"
 
+# ── Drivers ──────────────────────────────────────────────────────────────────
 drivers:
   - name: dht22
     instance: "air"
     config:
       pin: 4
 
+# ── Telemetry ─────────────────────────────────────────────────────────────────
 defaults:
   heartbeat_interval: 60
   report_metrics:
