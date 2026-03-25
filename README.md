@@ -44,46 +44,24 @@ I (13600) jettyd:   Rules: 0
 
 Connect your DHT22 data pin to a GPIO (e.g. GPIO 4).
 
-### Step 2 — Register the driver in `main/main.c`
+### Step 2 — Declare the driver in `device.yaml`
 
-```c
-#include "jettyd.h"
-#include "dht22.h"          // ← add this
+Open `device.yaml` in your project root and add the driver under `drivers:`:
 
-void app_main(void)
-{
-    jettyd_config_t config = {
-        .device_type            = CONFIG_JETTYD_DEVICE_TYPE,
-        .firmware_version       = CONFIG_JETTYD_FIRMWARE_VERSION,
-        .heartbeat_interval_sec = 60,
-        .mqtt_keepalive         = 60,
-        .mqtt_qos               = 1,
-        .mqtt_buffer_on_disconnect = true,
-        .mqtt_max_buffer_size   = 16,
-        .has_battery            = false,
-        .battery_adc_pin        = -1,
-        .status_led_pin         = -1,
-        .wake_on_pin            = -1,
-    };
-
-    ESP_ERROR_CHECK(jettyd_init(&config));
-    ESP_ERROR_CHECK(jettyd_start());
-}
+```yaml
+drivers:
+  - name: dht22
+    instance: "air"
+    config:
+      pin: 4
 ```
 
-Open `jettyd/src/driver_registry.c` in the SDK and add your driver:
+That's it. The next `idf.py build` auto-generates `main/driver_registry.c` from `device.yaml`.
+The driver will publish `air.temperature` and `air.humidity` on every heartbeat.
 
-```c
-#include "dht22.h"
-
-void jettyd_register_drivers(void)
-{
-    dht22_config_t air_cfg = { .pin = 4 };
-    dht22_register("air", &air_cfg);
-}
-```
-
-That's it. The driver publishes `air.temperature` and `air.humidity` to jettyd automatically on every heartbeat.
+> **Note:** Never edit `jettyd-sdk/` files directly — it's a git submodule.
+> Your driver registration lives in `main/driver_registry.c` (auto-generated)
+> or you can edit it manually if you prefer not to use `device.yaml`.
 
 
 ---
@@ -96,16 +74,15 @@ Connect an LED (with a 330Ω resistor in series) from GPIO 8 to GND.
 
 ### Step 2 — Register the LED driver
 
-In `jettyd-sdk/jettyd/src/driver_registry.c`:
+In `device.yaml`:
 
-```c
-#include "led.h"
-
-void jettyd_register_drivers(void)
-{
-    led_config_t status_led = { .pin = 8, .active_high = true };
-    led_register("status", &status_led);
-}
+```yaml
+drivers:
+  - name: led
+    instance: "status"
+    config:
+      pin: 8
+      active_high: true
 ```
 
 ### Step 3 — Control it via jettyd
