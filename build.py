@@ -56,101 +56,104 @@ def _parse_yaml_simple(path):
     """
     Minimal YAML parser for device.yaml.
     Handles:
-      - top-level and nested key: value
-      - lists of scalars and dicts (- key: val)
+      - nested key: value mappings
+      - lists of scalars and dicts with indented sub-keys
+    Uses an index-based recursive approach rather than a fragile stack machine.
     """
-    lines = open(path).readlines()
+    raw_lines = open(path).readlines()
 
-    root = {}
-    # Each frame: (indent, obj)  where obj is dict or list
-    stack = [(-1, root)]
-
-    def top_dict(indent):
-        """Walk stack back to parent dict at indent < current."""
-        while len(stack) > 1 and stack[-1][0] >= indent:
-            stack.pop()
-        obj = stack[-1][1]
-        return obj if isinstance(obj, dict) else None
-
-    # Track the key whose value we're about to fill (could be a list/dict)
-    pending_key_for = {}  # indent -> key
-
-    for raw in lines:
+    # Pre-process: strip blank lines and comments, record (indent, text)
+    lines = []
+    for raw in raw_lines:
         line = raw.rstrip()
         if not line:
             continue
         stripped = line.lstrip()
         if stripped.startswith('#'):
             continue
+        lines.append((len(line) - len(stripped), stripped))
 
-        indent = len(line) - len(stripped)
+    def parse_value(i, base_indent):
+        """
+        Parse one value starting at lines[i], where the value's content is
+        indented > base_indent.  Returns (value, next_i).
+        The value is a dict, list, or scalar.
+        """
+        if i >= len(lines):
+            return {}, i
 
-        # ── List item ────────────────────────────────────────────────────────
-        if stripped.startswith('- '):
-            content = stripped[2:]
-            # Find or create the list that this item belongs to.
-            # The list lives at the same indent in the current parent dict.
-            parent_indent = indent
-            # Pop stack until we find a frame at indent-2 (the parent of this list)
-            while len(stack) > 1 and stack[-1][0] >= indent:
-                stack.pop()
-            parent_obj = stack[-1][1]
-            # The pending key at (indent - stack[-1][0] parent indent)
-            pkey = pending_key_for.get(indent)
-            if pkey and isinstance(parent_obj, dict):
-                if not isinstance(parent_obj.get(pkey), list):
-                    parent_obj[pkey] = []
-                lst = parent_obj[pkey]
-            else:
-                # Fallback: attach to last key added at nearest parent indent
-                lst = None
-                for k, v in parent_obj.items():
-                    if isinstance(v, list):
-                        lst = v
-                if lst is None:
-                    lst = []
+        child_indent = lines[i][0]
+        if child_indent <= base_indent:
+            return {}, i
 
-            # Parse the list item content
-            content = _strip_comment(content).strip()
-            if ':' in content:
-                # Dict item (possibly multi-field via subsequent indented lines)
-                item = {}
-                lst.append(item)
-                stack.append((indent + 2, item))
-                k, _, v = content.partition(':')
-                v = _strip_comment(v).strip()
-                item[k.strip()] = _coerce(v) if v else {}
-            else:
-                lst.append(_coerce(content))
-            continue
+        # Determine if this block is a mapping or sequence
+        if lines[i][1].startswith('- '):
+            return parse_list(i, base_indent)
+        else:
+            return parse_dict(i, base_indent)
 
-        # ── Key: value ───────────────────────────────────────────────────────
-        if ':' in stripped:
-            k, _, v = stripped.partition(':')
+    def parse_dict(i, base_indent):
+        result = {}
+        while i < len(lines):
+            indent, text = lines[i]
+            if indent <= base_indent:
+                break
+            if text.startswith('- '):
+                break  # unexpected — stop
+            if ':' not in text:
+                i += 1
+                continue
+
+            k, _, v = text.partition(':')
             k = k.strip()
             v = _strip_comment(v).strip()
 
-            parent = top_dict(indent)
-            if parent is None:
-                # We're inside a list-item dict
-                # find the top-of-stack dict
-                while stack and not isinstance(stack[-1][1], dict):
-                    stack.pop()
-                parent = stack[-1][1] if stack else root
-
             if v == '':
-                # Value is a sub-mapping or list (next lines are indented)
-                sub = {}
-                parent[k] = sub
-                stack.append((indent, sub))
-                pending_key_for[indent + 2] = k
-                # Re-point: the sub for this key might be replaced by a list
-                # We'll handle that when we see the first '- ' at indent+2
+                # Value is on the following indented lines
+                i += 1
+                child, i = parse_value(i, indent)
+                result[k] = child
             else:
-                parent[k] = _coerce(v)
-            continue
+                result[k] = _coerce(v)
+                i += 1
+        return result, i
 
-    return root
+    def parse_list(i, base_indent):
+        result = []
+        while i < len(lines):
+            indent, text = lines[i]
+            if indent <= base_indent:
+                break
+            if not text.startswith('- '):
+                break
+
+            content = _strip_comment(text[2:]).strip()
+            i += 1
+
+            if ':' in content:
+                # Dict item — first k:v on this line, more may follow at indent+2
+                item = {}
+                k, _, v = content.partition(':')
+                k = k.strip()
+                v = _strip_comment(v).strip()
+                item[k] = _coerce(v) if v else None
+
+                # Consume indented sub-keys
+                sub, i = parse_dict(i, indent)
+                item.update(sub)
+
+                # Fix None placeholder (key with value on next indented lines)
+                for sk in list(item.keys()):
+                    if item[sk] is None:
+                        # look ahead already consumed by parse_dict
+                        item[sk] = {}
+                result.append(item)
+            else:
+                result.append(_coerce(content))
+        return result, i
+
+    result, _ = parse_dict(0, -1)
+    return result
 
 
 # ── Driver metadata ───────────────────────────────────────────────────────────
@@ -235,6 +238,23 @@ def generate(yaml_path, out_path):
         f.write("\n".join(out))
 
     print(f"[build.py] {len(drivers)} driver(s) → {out_path}")
+
+    # Also emit a CMake fragment listing the driver components that must be
+    # added to main's REQUIRES so their include dirs are on the include path.
+    cmake_path = out_path.replace("driver_registry.c", "driver_requires.cmake")
+    active_components = [d.get("name", "") for d in drivers if isinstance(d, dict)
+                         and d.get("name", "").lower() in DRIVERS]
+    cmake_lines = [
+        "# AUTO-GENERATED by build.py — do not edit manually",
+        "# List of ESP-IDF component names for active drivers in device.yaml",
+        "set(JETTYD_DRIVER_REQUIRES",
+    ]
+    for comp in active_components:
+        cmake_lines.append(f"    {comp}")
+    cmake_lines.append(")")
+    with open(cmake_path, "w") as f:
+        f.write("\n".join(cmake_lines) + "\n")
+    print(f"[build.py] driver REQUIRES → {cmake_path}")
 
 
 if __name__ == "__main__":

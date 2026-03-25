@@ -1,9 +1,16 @@
+# Include the driver REQUIRES list emitted by build.py (from device.yaml).
+# Falls back to empty list if not yet generated (first clean build regenerates it).
+set(JETTYD_DRIVER_REQUIRES "")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
+endif()
+
 idf_component_register(
     SRCS
         "main.c"
         "driver_registry.c"
     INCLUDE_DIRS "."
-    REQUIRES jettyd
+    REQUIRES jettyd ${JETTYD_DRIVER_REQUIRES}
 )
 
 # Auto-generate driver_registry.c from device.yaml before the build
