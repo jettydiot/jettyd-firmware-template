@@ -5,7 +5,7 @@ Minimal ESP32 starter for [jettyd.com](https://jettyd.com) — the IoT middlewar
 ## Prerequisites
 
 - [ESP-IDF 5.x](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) installed and sourced
-- An ESP32-S3, C3, or C6 board
+- An **ESP32-S3**, **ESP32-C3**, or **ESP32-C6** board (original ESP32 is not supported)
 - A jettyd account — get your fleet token from [jettyd.com](https://jettyd.com)
 
 ## Quick start

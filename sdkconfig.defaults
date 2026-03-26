@@ -1,6 +1,6 @@
 # ── jettyd provisioning ──────────────────────────────────────────────────────
-# Replace these with your values from api.jettyd.com
-CONFIG_JETTYD_FLEET_TOKEN="ft_loV4ABpFL_Qsvf5_HwuUKsXOjf_YQ1Pnx5xoh_875Z0"
+# Get your fleet token from app.jettyd.com after signing up
+CONFIG_JETTYD_FLEET_TOKEN="ft_YOUR_TOKEN_HERE"
 CONFIG_JETTYD_MQTT_URI="mqtt://mqtt.jettyd.com:1883"
 CONFIG_JETTYD_FIRMWARE_VERSION="0.1.0"
 CONFIG_JETTYD_DEVICE_TYPE="esp32-generic"
@@ -9,14 +9,17 @@ CONFIG_JETTYD_DEVICE_TYPE="esp32-generic"
 CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
 CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
 
+# ── Supported targets: ESP32-S3, ESP32-C3, ESP32-C6 ─────────────────────────
+# Default target is ESP32-S3. To change:
+#   idf.py set-target esp32c3
+#   idf.py set-target esp32c6
+# Note: Original ESP32 (non-S3/C3/C6) is NOT supported.
+
 # ── ESP-IDF tunables ──────────────────────────────────────────────────────────
 CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=6144
 CONFIG_MQTT_TASK_STACK_SIZE=6144
-
-# ── Target: use esp32s3 for more DRAM ────────────────────────────────────────
-# If using a different chip, change the target:
-#   idf.py set-target esp32c3
-# (This file sets defaults; actual target is set via idf.py set-target)
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=1536
 
 # ── Flash & Partition ────────────────────────────────────────────────────────
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
@@ -26,7 +29,3 @@ CONFIG_PARTITION_TABLE_OFFSET=0x8000
 
 # ── OTA ───────────────────────────────────────────────────────────────────────
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
-
-# ── Task stack sizes ─────────────────────────────────────────────────────────
-CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
-CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=1536
