@@ -8,15 +8,18 @@ setup:
 	@echo "✅ SDK cloned. Now run: idf.py build"
 
 build:
+	@rm -f sdkconfig
 	idf.py build
 
 flash:
+	@rm -f sdkconfig
 	idf.py flash
 
 monitor:
 	idf.py monitor
 
 flash-monitor:
+	@rm -f sdkconfig
 	idf.py flash monitor
 
 clean:

@@ -26,5 +26,15 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/button
 )
 
+# Auto-delete sdkconfig if sdkconfig.defaults is newer (prevents stale config)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig.defaults")
+    file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig" TS_CONFIG)
+    file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig.defaults" TS_DEFAULTS)
+    if(TS_DEFAULTS IS_NEWER_THAN TS_CONFIG)
+        message(STATUS "sdkconfig.defaults is newer — deleting stale sdkconfig")
+        file(REMOVE "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig")
+    endif()
+endif()
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(jettyd-device)

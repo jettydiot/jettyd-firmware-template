@@ -1,6 +1,6 @@
 # jettyd firmware template
 
-Minimal ESP32 starter for [jettyd.com](https://jettyd.com) — the IoT middleware layer for AI agents.
+Minimal ESP32-S3/C3/C6 starter for [jettyd.com](https://jettyd.com) — the IoT middleware layer for AI agents.
 
 ## Prerequisites
 
@@ -62,7 +62,6 @@ The driver will publish `air.temperature` and `air.humidity` on every heartbeat.
 > **Note:** Never edit `jettyd-sdk/` files directly — it's a git submodule.
 > Your driver registration lives in `main/driver_registry.c` (auto-generated)
 > or you can edit it manually if you prefer not to use `device.yaml`.
-
 
 ---
 
@@ -163,12 +162,11 @@ Or use webhooks to trigger an automation whenever the button is pressed.
 
 ---
 
-
 ---
 
 ## JettyScript — rules that run on the device
 
-JettyScript is a lightweight rules engine that runs on the ESP32 itself — no cloud round-trip needed. Rules evaluate sensor readings locally and fire alerts when thresholds are crossed.
+JettyScript is a lightweight rules engine that runs on the device itself — no cloud round-trip needed. Rules evaluate sensor readings locally and fire alerts when thresholds are crossed.
 
 ### Example: temperature alerts
 
@@ -334,7 +332,6 @@ This template uses the [jettyd-firmware SDK](https://github.com/jettydiot/jettyd
 | ESP32-C3 | ✅ Tested |
 | ESP32-S3 | ✅ Supported |
 | ESP32-C6 | ✅ Supported |
-| ESP32 (classic) | ⚠️ Untested |
 
 ## Licence
 
