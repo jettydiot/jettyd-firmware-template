@@ -4,11 +4,15 @@
  */
 
 #include "jettyd_driver.h"
-#include "dht22.h"
+#include "led.h"
+#include "button.h"
 
 void jettyd_register_drivers(void)
 {
-    dht22_config_t air_cfg = { .pin = 4 };
-    dht22_register("air", &air_cfg);
+    led_config_t status_cfg = { .pin = 8, .active_high = true };
+    led_register("status", &status_cfg);
+
+    button_config_t btn_cfg = { .pin = 0, .active_low = true };
+    button_register("btn", &btn_cfg);
 
 }
