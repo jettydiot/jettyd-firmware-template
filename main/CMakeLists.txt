@@ -1,20 +1,5 @@
-# Include the driver REQUIRES list emitted by build.py (from device.yaml).
-# Falls back to empty list if not yet generated (first clean build regenerates it).
-set(JETTYD_DRIVER_REQUIRES "")
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
-    include("${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
-endif()
-
-idf_component_register(
-    SRCS
-        "main.c"
-        "driver_registry.c"
-    INCLUDE_DIRS "."
-    REQUIRES jettyd ${JETTYD_DRIVER_REQUIRES}
-)
-
-# Auto-generate driver_registry.c from device.yaml before the build
-# Uses the ESP-IDF Python environment (has PyYAML pre-installed)
+# ── Step 1: Run build.py to generate driver_registry.c + driver_requires.cmake
+# Must run BEFORE idf_component_register so REQUIRES reflects active drivers.
 set(DEVICE_YAML   "${CMAKE_CURRENT_SOURCE_DIR}/../device.yaml")
 set(DRIVER_REG_C  "${CMAKE_CURRENT_SOURCE_DIR}/driver_registry.c")
 set(BUILD_PY      "${CMAKE_CURRENT_SOURCE_DIR}/../build.py")
@@ -40,3 +25,20 @@ if(EXISTS "${DEVICE_YAML}" AND EXISTS "${BUILD_PY}")
         message(STATUS "${CODEGEN_OUTPUT}")
     endif()
 endif()
+
+# ── Step 2: Load the driver REQUIRES list that build.py just wrote.
+# On the very first clean build this file is freshly generated above,
+# so JETTYD_DRIVER_REQUIRES will always reflect the current device.yaml.
+set(JETTYD_DRIVER_REQUIRES "")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/driver_requires.cmake")
+endif()
+
+# ── Step 3: Register the main component with the correct driver deps.
+idf_component_register(
+    SRCS
+        "main.c"
+        "driver_registry.c"
+    INCLUDE_DIRS "."
+    REQUIRES jettyd ${JETTYD_DRIVER_REQUIRES}
+)
