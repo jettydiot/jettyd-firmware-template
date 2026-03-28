@@ -4,11 +4,19 @@
  */
 
 #include "jettyd_driver.h"
+#include "jettyd.h"
 #include "led.h"
 #include "button.h"
 
 void jettyd_register_drivers(void)
 {
+    /* Default metrics from device.yaml */
+    static const char *s_default_metrics[] = {
+        "system.rssi",
+        NULL
+    };
+    jettyd_set_default_config(60, s_default_metrics);
+
     led_config_t status_cfg = { .pin = 8, .active_high = true };
     led_register("status", &status_cfg);
 

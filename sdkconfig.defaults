@@ -9,6 +9,11 @@ CONFIG_JETTYD_DEVICE_TYPE="esp32-generic"
 CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
 CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
 
+# ── Heartbeat ─────────────────────────────────────────────────────────────────
+# heartbeat_interval in device.yaml is in SECONDS (e.g. 60 = 1 minute).
+# report_metrics lists dot-namespaced metrics to publish on each heartbeat.
+# Telemetry fires immediately on connect, then repeats at the interval.
+
 # ── Target chip ───────────────────────────────────────────────────────────────
 # Controlled by the 'target' field in device.yaml.
 # CMakeLists.txt reads device.yaml and sets IDF_TARGET automatically.

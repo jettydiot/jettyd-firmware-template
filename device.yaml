@@ -32,7 +32,7 @@ drivers:
 
 # ── Telemetry ─────────────────────────────────────────────────────────────────
 defaults:
-  heartbeat_interval: 60
+  heartbeat_interval: 60  # seconds — telemetry fires immediately on connect, then every N seconds
   report_metrics:
     - "system.rssi"
     # - "system.chip_temp"    # uncomment to include internal chip temperature

@@ -218,6 +218,27 @@ def generate(yaml_path, out_path):
         reg_lines.append(f'    {fn}("{instance}", &{safe}_cfg);')
         reg_lines.append("")
 
+    # ── Default heartbeat from device.yaml ──────────────────────────────────
+    defaults     = cfg.get("defaults", {}) or {}
+    interval_sec = int(defaults.get("heartbeat_interval", 60))
+    raw_metrics  = defaults.get("report_metrics", []) or []
+    if not isinstance(raw_metrics, list):
+        raw_metrics = []
+    report_metrics = [str(m) for m in raw_metrics]
+
+    # Build the NULL-terminated static metric list and jettyd_set_default_config call
+    metric_init_lines = []
+    if report_metrics:
+        metric_init_lines.append("    /* Default metrics from device.yaml */")
+        metric_init_lines.append(f"    static const char *s_default_metrics[] = {{")
+        for m in report_metrics:
+            metric_init_lines.append(f'        "{m}",')
+        metric_init_lines.append("        NULL")
+        metric_init_lines.append("    };")
+        metric_init_lines.append(f"    jettyd_set_default_config({interval_sec}, s_default_metrics);")
+    else:
+        metric_init_lines.append(f"    jettyd_set_default_config({interval_sec}, NULL);")
+
     out = [
         "/**",
         " * driver_registry.c — AUTO-GENERATED from device.yaml",
@@ -225,14 +246,15 @@ def generate(yaml_path, out_path):
         " */",
         "",
         '#include "jettyd_driver.h"',
+        '#include "jettyd.h"',
     ]
     for h in headers:
         out.append(f'#include "{h}"')
     out += ["", "void jettyd_register_drivers(void)", "{"]
+    out += metric_init_lines
     if reg_lines:
+        out.append("")
         out += reg_lines
-    else:
-        out.append("    /* No drivers configured in device.yaml */")
     out += ["}", ""]
 
     with open(out_path, "w") as f:
