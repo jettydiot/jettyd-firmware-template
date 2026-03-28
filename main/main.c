@@ -41,6 +41,10 @@ void app_main(void)
         .wake_on_pin      = -1,
     };
 
+    /* jettyd_init() initialises the driver registry (zeroes it), then
+     * jettyd_register_drivers() populates it. jettyd_start() connects,
+     * provisions, and begins the telemetry loop. */
     ESP_ERROR_CHECK(jettyd_init(&config));
+    jettyd_register_drivers();
     ESP_ERROR_CHECK(jettyd_start());
 }
