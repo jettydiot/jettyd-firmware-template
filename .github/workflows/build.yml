@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [esp32s3, esp32c3, esp32c6]
+
+    steps:
+      - name: Checkout template
+        uses: actions/checkout@v4
+        with:
+          path: firmware
+
+      - name: Clone jettyd SDK
+        run: |
+          cd firmware
+          git clone https://github.com/jettydiot/jettyd-firmware.git jettyd-sdk
+
+      - name: Set up ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.3.2
+          target: ${{ matrix.target }}
+          path: firmware
+
+      - name: Run build.py codegen
+        run: |
+          cd firmware
+          python3 build.py device.yaml main/driver_registry.c
+
+      - name: Verify generated files
+        run: |
+          test -f firmware/main/device_config.h   || (echo "❌ device_config.h missing" && exit 1)
+          test -f firmware/main/driver_registry.c  || (echo "❌ driver_registry.c missing" && exit 1)
+          test -f firmware/main/driver_requires.cmake || (echo "❌ driver_requires.cmake missing" && exit 1)
+          echo "✅ Generated files present"
+
+      - name: Check for format specifier issues
+        run: |
+          # uint32_t is 'long unsigned int' on xtensa/riscv — %d is -Werror=format.
+          # uint8_t/uint16_t are fine with %d (promoted to int).
+          # Flag lines using %d with known uint32_t field names.
+          HITS=$(grep -rn '%[di]' \
+            firmware/jettyd-sdk/drivers/ firmware/jettyd-sdk/jettyd/src/ 2>/dev/null | \
+            grep -v 'PRIu32\|PRId32\|%lu\|%u\|//' | \
+            grep -E 'interval_sec|debounce_ms|freq_hz|max_on_duration|press_count|heap_free|uptime') || true
+          if [ -n "$HITS" ]; then
+            echo "❌ uint32_t field with %d format — use PRIu32 or (int) cast:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "✅ Format specifiers OK"
