@@ -218,27 +218,7 @@ def generate(yaml_path, out_path):
         reg_lines.append(f'    {fn}("{instance}", &{safe}_cfg);')
         reg_lines.append("")
 
-    # ── Default heartbeat from device.yaml ──────────────────────────────────
-    defaults     = cfg.get("defaults", {}) or {}
-    interval_sec = int(defaults.get("heartbeat_interval", 60))
-    raw_metrics  = defaults.get("report_metrics", []) or []
-    if not isinstance(raw_metrics, list):
-        raw_metrics = []
-    report_metrics = [str(m) for m in raw_metrics]
-
-    # Build the NULL-terminated static metric list and jettyd_set_default_config call
-    metric_init_lines = []
-    if report_metrics:
-        metric_init_lines.append("    /* Default metrics from device.yaml */")
-        metric_init_lines.append(f"    static const char *s_default_metrics[] = {{")
-        for m in report_metrics:
-            metric_init_lines.append(f'        "{m}",')
-        metric_init_lines.append("        NULL")
-        metric_init_lines.append("    };")
-        metric_init_lines.append(f"    jettyd_set_default_config({interval_sec}, s_default_metrics);")
-    else:
-        metric_init_lines.append(f"    jettyd_set_default_config({interval_sec}, NULL);")
-
+    # ── driver_registry.c — drivers only ────────────────────────────────────
     out = [
         "/**",
         " * driver_registry.c — AUTO-GENERATED from device.yaml",
@@ -246,21 +226,87 @@ def generate(yaml_path, out_path):
         " */",
         "",
         '#include "jettyd_driver.h"',
-        '#include "jettyd.h"',
     ]
     for h in headers:
         out.append(f'#include "{h}"')
     out += ["", "void jettyd_register_drivers(void)", "{"]
-    out += metric_init_lines
     if reg_lines:
-        out.append("")
         out += reg_lines
+    else:
+        out.append("    /* No drivers configured in device.yaml */")
     out += ["}", ""]
 
     with open(out_path, "w") as f:
         f.write("\n".join(out))
 
     print(f"[build.py] {len(drivers)} driver(s) → {out_path}")
+
+    # ── device_config.h — compile-time constants from device.yaml ───────────
+    # main.c includes this to build jettyd_config_t without any hardcoded values.
+    defaults     = cfg.get("defaults", {}) or {}
+    interval_sec = int(defaults.get("heartbeat_interval", 60))
+    raw_metrics  = defaults.get("report_metrics", []) or []
+    if not isinstance(raw_metrics, list):
+        raw_metrics = []
+    report_metrics = [str(m) for m in raw_metrics]
+
+    device_name    = str(cfg.get("name", "my-device"))
+    device_version = str(cfg.get("version", "0.1.0"))
+    mqtt_keepalive = int((cfg.get("mqtt") or {}).get("keepalive", 60))
+    mqtt_qos       = int((cfg.get("mqtt") or {}).get("qos", 1))
+
+    hdr = [
+        "/**",
+        " * device_config.h — AUTO-GENERATED from device.yaml",
+        " * Do not edit manually. Edit device.yaml and rebuild.",
+        " *",
+        " * Included by main.c to assemble jettyd_config_t from device.yaml values.",
+        " */",
+        "",
+        "#ifndef DEVICE_CONFIG_H",
+        "#define DEVICE_CONFIG_H",
+        "",
+        "/* ── Device identity ──────────────────────────────────────────────────── */",
+        f'#define DEVICE_NAME          "{device_name}"',
+        f'#define DEVICE_VERSION       "{device_version}"',
+        "",
+        "/* ── Telemetry / heartbeat ─────────────────────────────────────────────── */",
+        f"/* heartbeat_interval is in SECONDS. Telemetry fires immediately on connect,",
+        f" * then repeats every DEVICE_HEARTBEAT_INTERVAL_SEC seconds. */",
+        f"#define DEVICE_HEARTBEAT_INTERVAL_SEC  {interval_sec}U",
+        "",
+    ]
+
+    if report_metrics:
+        hdr += [
+            "/* NULL-terminated list of metrics to publish on each heartbeat. */",
+            "/* Use NULL for all metrics (DEVICE_REPORT_METRICS_ALL). */",
+            "#define DEVICE_REPORT_METRICS_ALL  NULL",
+            "static const char *DEVICE_REPORT_METRICS[] = {",
+        ]
+        for m in report_metrics:
+            hdr.append(f'    "{m}",')
+        hdr += ["    NULL", "};", ""]
+    else:
+        hdr += [
+            "/* No report_metrics set — publish all available metrics on each heartbeat. */",
+            "#define DEVICE_REPORT_METRICS  NULL",
+            "",
+        ]
+
+    hdr += [
+        "/* ── MQTT ──────────────────────────────────────────────────────────────── */",
+        f"#define DEVICE_MQTT_KEEPALIVE  {mqtt_keepalive}U",
+        f"#define DEVICE_MQTT_QOS        {mqtt_qos}",
+        "",
+        "#endif /* DEVICE_CONFIG_H */",
+        "",
+    ]
+
+    hdr_path = out_path.replace("driver_registry.c", "device_config.h")
+    with open(hdr_path, "w") as f:
+        f.write("\n".join(hdr))
+    print(f"[build.py] device config → {hdr_path}")
 
     # Also emit a CMake fragment listing the driver components that must be
     # added to main's REQUIRES so their include dirs are on the include path.
