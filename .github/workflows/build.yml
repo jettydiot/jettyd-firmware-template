@@ -45,6 +45,11 @@ jobs:
           test -f firmware/main/driver_requires.cmake || (echo "❌ driver_requires.cmake missing" && exit 1)
           echo "✅ Generated files present"
 
+      - name: Run host unit tests
+        run: |
+          cd firmware/jettyd-sdk/test && make
+          echo "✅ Unit tests passed"
+
       - name: Check for format specifier issues
         run: |
           # uint32_t is 'long unsigned int' on xtensa/riscv — %d is -Werror=format.

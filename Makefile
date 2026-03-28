@@ -1,4 +1,4 @@
-.PHONY: setup build flash monitor clean check check-format check-codegen
+.PHONY: setup build flash monitor clean check check-format check-codegen test
 
 SDK_DIR := jettyd-sdk
 
@@ -11,9 +11,17 @@ setup:
 # Validates codegen and catches common issues without a full IDF compile.
 # CI runs the full build on every push — this is the fast local gate.
 
-check: check-codegen check-format
+check: check-codegen check-format test
 	@echo ""
 	@echo "✅ All checks passed — safe to commit"
+
+# ── Unit tests ────────────────────────────────────────────────────────────────
+# Runs the SDK host test suite (no ESP-IDF or hardware needed).
+
+test:
+	@echo "→ Running SDK unit tests..."
+	@$(MAKE) -C $(SDK_DIR)/test --no-print-directory
+	@echo "✅ Unit tests OK"
 
 check-codegen:
 	@echo "→ Running build.py codegen..."
