@@ -11,6 +11,7 @@ Usage (called automatically by CMake, or manually):
 
 import sys
 import re
+import os
 
 # ── YAML loading ─────────────────────────────────────────────────────────────
 
@@ -255,6 +256,24 @@ def generate(yaml_path, out_path):
     with open(cmake_path, "w") as f:
         f.write("\n".join(cmake_lines) + "\n")
     print(f"[build.py] driver REQUIRES → {cmake_path}")
+
+    # Sync CONFIG_IDF_TARGET in sdkconfig.defaults with device.yaml 'target'
+    target = str(cfg.get("target", "esp32s3")).strip().lower()
+    sdkconfig_defaults = os.path.join(os.path.dirname(out_path), "..", "sdkconfig.defaults")
+    sdkconfig_defaults = os.path.normpath(sdkconfig_defaults)
+    if os.path.exists(sdkconfig_defaults):
+        with open(sdkconfig_defaults) as f:
+            sdc = f.read()
+        import re as _re
+        new_sdc = _re.sub(
+            r'CONFIG_IDF_TARGET="[^"]*"',
+            f'CONFIG_IDF_TARGET="{target}"',
+            sdc,
+        )
+        if new_sdc != sdc:
+            with open(sdkconfig_defaults, "w") as f:
+                f.write(new_sdc)
+            print(f"[build.py] sdkconfig.defaults → CONFIG_IDF_TARGET={target}")
 
 
 if __name__ == "__main__":

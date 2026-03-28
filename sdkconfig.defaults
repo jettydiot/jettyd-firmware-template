@@ -9,11 +9,12 @@ CONFIG_JETTYD_DEVICE_TYPE="esp32-generic"
 CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
 CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
 
-# ── Supported targets: ESP32-S3, ESP32-C3, ESP32-C6 ─────────────────────────
-# Default target is ESP32-S3. To change:
-#   idf.py set-target esp32c3
-#   idf.py set-target esp32c6
+# ── Target chip ───────────────────────────────────────────────────────────────
+# Controlled by the 'target' field in device.yaml.
+# CMakeLists.txt reads device.yaml and sets IDF_TARGET automatically.
+# Supported: esp32s3, esp32c3, esp32c6
 # Note: Original ESP32 (non-S3/C3/C6) is NOT supported.
+CONFIG_IDF_TARGET="esp32s3"
 
 # ── ESP-IDF tunables ──────────────────────────────────────────────────────────
 CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=6144

@@ -26,7 +26,46 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/button
 )
 
-# Auto-delete sdkconfig if sdkconfig.defaults is newer (prevents stale config)
+# ── Read IDF_TARGET from device.yaml ─────────────────────────────────────────
+# Must happen before include(project.cmake) so ESP-IDF picks up the right target.
+set(DEVICE_YAML "${CMAKE_CURRENT_SOURCE_DIR}/device.yaml")
+if(EXISTS "${DEVICE_YAML}" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/build.py")
+    find_program(_JETTYD_PYTHON python3
+        HINTS ENV IDF_PYTHON_ENV_PATH
+        NO_DEFAULT_PATH
+    )
+    if(NOT _JETTYD_PYTHON)
+        set(_JETTYD_PYTHON python3)
+    endif()
+    execute_process(
+        COMMAND ${_JETTYD_PYTHON} -c
+            "import sys; sys.path.insert(0,'${CMAKE_CURRENT_SOURCE_DIR}'); from build import load_yaml; cfg=load_yaml('${DEVICE_YAML}'); print(cfg.get('target','esp32s3'))"
+        OUTPUT_VARIABLE DEVICE_TARGET
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(NOT DEVICE_TARGET OR DEVICE_TARGET STREQUAL "")
+        set(DEVICE_TARGET "esp32s3")
+    endif()
+    message(STATUS "[device.yaml] target = ${DEVICE_TARGET}")
+    set(IDF_TARGET "${DEVICE_TARGET}" CACHE STRING "IDF target (from device.yaml)" FORCE)
+
+    # ── Invalidate sdkconfig when target changes ──────────────────────────────
+    # sdkconfig is regenerated from scratch on target change; keep it in sync.
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig")
+        file(READ "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig" _SDKCONFIG_RAW)
+        string(REGEX MATCH "CONFIG_IDF_TARGET=\"([^\"]*)\"" _TARGET_MATCH "${_SDKCONFIG_RAW}")
+        set(_SDKCONFIG_TARGET "${CMAKE_MATCH_1}")
+        if(NOT "${_SDKCONFIG_TARGET}" STREQUAL "${DEVICE_TARGET}")
+            message(STATUS "[device.yaml] target changed (${_SDKCONFIG_TARGET} → ${DEVICE_TARGET}) — deleting stale sdkconfig")
+            file(REMOVE "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig")
+        endif()
+    endif()
+else()
+    message(STATUS "[device.yaml] not found — using IDF_TARGET from environment or sdkconfig")
+endif()
+
+# ── Auto-delete sdkconfig if sdkconfig.defaults is newer ─────────────────────
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig.defaults")
     file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig" TS_CONFIG)
     file(TIMESTAMP "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig.defaults" TS_DEFAULTS)
