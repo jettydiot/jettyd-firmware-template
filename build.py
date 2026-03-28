@@ -325,23 +325,43 @@ def generate(yaml_path, out_path):
         f.write("\n".join(cmake_lines) + "\n")
     print(f"[build.py] driver REQUIRES → {cmake_path}")
 
-    # Sync CONFIG_IDF_TARGET in sdkconfig.defaults with device.yaml 'target'
-    target = str(cfg.get("target", "esp32s3")).strip().lower()
+    # Sync device.yaml values into sdkconfig.defaults
+    # Maps: (yaml path, CONFIG key, default)
+    jettyd_section = cfg.get("jettyd", {}) or {}
+    wifi_section   = cfg.get("wifi",   {}) or {}
+
+    sdc_updates = {
+        "CONFIG_IDF_TARGET":        str(cfg.get("target", "esp32s3")).strip().lower(),
+        "CONFIG_JETTYD_FLEET_TOKEN": str(jettyd_section.get("fleet_token", "")).strip(),
+        "CONFIG_JETTYD_MQTT_URI":   str(jettyd_section.get("mqtt_uri", "mqtt://mqtt.jettyd.com:1883")).strip(),
+        "CONFIG_JETTYD_WIFI_SSID":  str(wifi_section.get("ssid", "")).strip(),
+        "CONFIG_JETTYD_WIFI_PASSWORD": str(wifi_section.get("password", "")).strip(),
+        "CONFIG_JETTYD_FIRMWARE_VERSION": str(cfg.get("version", "0.1.0")).strip(),
+    }
+
     sdkconfig_defaults = os.path.join(os.path.dirname(out_path), "..", "sdkconfig.defaults")
     sdkconfig_defaults = os.path.normpath(sdkconfig_defaults)
     if os.path.exists(sdkconfig_defaults):
         with open(sdkconfig_defaults) as f:
             sdc = f.read()
         import re as _re
-        new_sdc = _re.sub(
-            r'CONFIG_IDF_TARGET="[^"]*"',
-            f'CONFIG_IDF_TARGET="{target}"',
-            sdc,
-        )
-        if new_sdc != sdc:
+        changed_keys = []
+        new_sdc = sdc
+        for key, value in sdc_updates.items():
+            if not value:
+                continue  # Don't overwrite with empty — leave placeholder intact
+            new_sdc = _re.sub(
+                rf'{re.escape(key)}="[^"]*"',
+                f'{key}="{value}"',
+                new_sdc,
+            )
+            if new_sdc != sdc:
+                changed_keys.append(key)
+                sdc = new_sdc  # chain for next iteration
+        if changed_keys:
             with open(sdkconfig_defaults, "w") as f:
                 f.write(new_sdc)
-            print(f"[build.py] sdkconfig.defaults → CONFIG_IDF_TARGET={target}")
+            print(f"[build.py] sdkconfig.defaults → updated: {', '.join(changed_keys)}")
 
 
 if __name__ == "__main__":

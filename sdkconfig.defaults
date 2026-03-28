@@ -1,11 +1,12 @@
 # ── jettyd provisioning ──────────────────────────────────────────────────────
-# Get your fleet token from app.jettyd.com after signing up
+# ⚠️  Auto-synced from device.yaml by build.py — edit device.yaml, not this file
 CONFIG_JETTYD_FLEET_TOKEN="ft_YOUR_TOKEN_HERE"
 CONFIG_JETTYD_MQTT_URI="mqtt://mqtt.jettyd.com:1883"
-CONFIG_JETTYD_FIRMWARE_VERSION="0.1.0"
+CONFIG_JETTYD_FIRMWARE_VERSION="1.0.0"
 CONFIG_JETTYD_DEVICE_TYPE="esp32-generic"
 
-# ── WiFi ──────────────────────────────────────────────────────────────────────
+# ── WiFi ─────────────────────────────────────────────────────────────────────
+# ⚠️  Auto-synced from device.yaml wifi.ssid / wifi.password
 CONFIG_JETTYD_WIFI_SSID="YourNetworkName"
 CONFIG_JETTYD_WIFI_PASSWORD="YourNetworkPassword"
 
