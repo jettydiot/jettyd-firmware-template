@@ -1,0 +1,38 @@
+name: Notify on QUICKSTART change
+
+# When QUICKSTART.md lands on main, fire a repository_dispatch at the
+# jettydiot/jettyd repo so the docs site and dashboard rebuild and pull
+# the new content. QUICKSTART.md is the single source of truth — see
+# the file's own header for the rationale.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "QUICKSTART.md"
+
+jobs:
+  dispatch:
+    name: Dispatch to jettyd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger downstream rebuild
+        env:
+          # PAT with `repo` scope on jettydiot/jettyd. Stored as a repo
+          # secret on jettyd-firmware-template. If absent, the dispatch
+          # is skipped (downstream sites will rebuild on their own next
+          # push to jettyd:main).
+          GH_PAT: ${{ secrets.JETTYD_DISPATCH_PAT }}
+        run: |
+          if [ -z "$GH_PAT" ]; then
+            echo "JETTYD_DISPATCH_PAT not set — skipping dispatch."
+            echo "Set it on this repo to enable cross-repo SSOT rebuilds."
+            exit 0
+          fi
+          curl -sS -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_PAT" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/jettydiot/jettyd/dispatches \
+            -d '{"event_type":"quickstart-updated","client_payload":{"sha":"${{ github.sha }}"}}'
+          echo "Dispatched quickstart-updated to jettydiot/jettyd."
