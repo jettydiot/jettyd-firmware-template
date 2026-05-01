@@ -4,14 +4,16 @@ Minimal ESP32-S3/C3/C6 starter for [jettyd](https://jettyd.com) — the IoT midd
 
 ## Quick start
 
-👉 **[Full QuickStart guide →](https://docs.jettyd.com/quickstart)**
+👉 **[QUICKSTART.md →](./QUICKSTART.md)** (also rendered at [docs.jettyd.com/quickstart](https://docs.jettyd.com/quickstart))
 
 ```bash
 git clone https://github.com/jettydiot/jettyd-firmware-template my-device
-cd my-device && make setup
-# Edit device.yaml with your WiFi + fleet token
+cd my-device && make setup    # requires ESP-IDF v5.x on your PATH
+$EDITOR device.yaml           # set fleet_token, wifi.ssid, wifi.password
 idf.py build flash monitor
 ```
+
+`QUICKSTART.md` in this repo is the **single source of truth** — both the docs site and the dashboard's Get Started page render from it.
 
 ## What's in the box
 
