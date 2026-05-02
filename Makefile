@@ -50,18 +50,27 @@ check-format:
 # ── Build / Flash / Monitor ──────────────────────────────────────────────────
 
 build:
-	@rm -f sdkconfig
+	@if [ -f sdkconfig ] && [ device.yaml -nt sdkconfig ]; then \
+		echo "→ device.yaml changed — clearing stale sdkconfig"; \
+		rm -f sdkconfig; \
+	fi
 	idf.py build
 
 flash:
-	@rm -f sdkconfig
+	@if [ -f sdkconfig ] && [ device.yaml -nt sdkconfig ]; then \
+		echo "→ device.yaml changed — clearing stale sdkconfig"; \
+		rm -f sdkconfig; \
+	fi
 	idf.py flash
 
 monitor:
 	idf.py monitor
 
 flash-monitor:
-	@rm -f sdkconfig
+	@if [ -f sdkconfig ] && [ device.yaml -nt sdkconfig ]; then \
+		echo "→ device.yaml changed — clearing stale sdkconfig"; \
+		rm -f sdkconfig; \
+	fi
 	idf.py flash monitor
 
 clean:
