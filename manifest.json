@@ -1,0 +1,16 @@
+{
+  "name": "jettyd ESP32-C3",
+  "version": "1.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "https://github.com/jettydiot/jettyd-firmware-template/releases/latest/download/jettyd-esp32c3.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

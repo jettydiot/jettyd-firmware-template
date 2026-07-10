@@ -331,8 +331,13 @@ def generate(yaml_path, out_path):
     jettyd_section = cfg.get("jettyd", {}) or {}
     wifi_section   = cfg.get("wifi",   {}) or {}
 
+    # IDF_TARGET env var (set per CI matrix leg or on the command line) OVERRIDES
+    # the device.yaml `target:` default so one device.yaml builds for any target.
+    target_default  = str(cfg.get("target", "esp32s3")).strip().lower()
+    resolved_target = os.environ.get("IDF_TARGET", "").strip().lower() or target_default
+
     sdc_updates = {
-        "CONFIG_IDF_TARGET":        str(cfg.get("target", "esp32s3")).strip().lower(),
+        "CONFIG_IDF_TARGET":        resolved_target,
         "CONFIG_JETTYD_FLEET_TOKEN": str(jettyd_section.get("fleet_token", "")).strip(),
         "CONFIG_JETTYD_MQTT_URI":   str(jettyd_section.get("mqtt_uri", "mqtt://mqtt.jettyd.com:1883")).strip(),
         "CONFIG_JETTYD_WIFI_SSID":  str(wifi_section.get("ssid", "")).strip(),

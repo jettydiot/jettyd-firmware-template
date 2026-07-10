@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jettyd — Flash ESP32-C3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-deep:    #0F172A;
+      --color-surface: #1E293B;
+      --color-border:  #334155;
+      --color-sea:     #1E40AF;
+      --color-teal:    #0D9488;
+      --color-teal-lt: #14B8A6;
+      --color-coral:   #F97316;
+      --color-text:    #F1F5F9;
+      --color-muted:   #94A3B8;
+      --font-sans:     'Outfit', system-ui, sans-serif;
+      --font-mono:     'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-deep);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--color-teal);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+
+    .wordmark {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    main {
+      width: 100%;
+      max-width: 640px;
+      padding: 3rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    h1 span {
+      color: var(--color-teal-lt);
+    }
+
+    .subtitle {
+      color: var(--color-muted);
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-muted);
+      margin-bottom: 1rem;
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .checklist li::before {
+      content: '✓';
+      color: var(--color-teal);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    .checklist a {
+      color: var(--color-teal-lt);
+      text-decoration: none;
+    }
+
+    .checklist a:hover {
+      text-decoration: underline;
+    }
+
+    .flash-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+
+    .chip-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(13, 148, 136, 0.12);
+      border: 1px solid rgba(13, 148, 136, 0.3);
+      border-radius: 999px;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      color: var(--color-teal-lt);
+    }
+
+    .chip-badge::before {
+      content: '⬡';
+      font-size: 0.75rem;
+    }
+
+    esp-web-install-button {
+      --esp-tools-button-color: var(--color-coral);
+      --esp-tools-button-text-color: #fff;
+    }
+
+    esp-web-install-button::part(button) {
+      background: var(--color-coral);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 2rem;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    esp-web-install-button::part(button):hover {
+      background: #ea6c0a;
+    }
+
+    .browser-note {
+      font-size: 0.82rem;
+      color: var(--color-muted);
+    }
+
+    .browser-note a {
+      color: var(--color-teal-lt);
+      text-decoration: none;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--color-sea);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 0.05rem;
+    }
+
+    .step-body {
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    .step-body strong {
+      color: var(--color-text);
+    }
+
+    .step-body p {
+      color: var(--color-muted);
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+    }
+
+    .docs-link {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--color-muted);
+    }
+
+    .docs-link a {
+      color: var(--color-teal-lt);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .docs-link a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      text-align: center;
+      border-top: 1px solid var(--color-border);
+      width: 100%;
+    }
+
+    footer a {
+      color: var(--color-teal-lt);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">jd</div>
+  <span class="wordmark">jettyd</span>
+</header>
+
+<main>
+  <div>
+    <h1>Flash your <span>ESP32-C3</span></h1>
+    <p class="subtitle">
+      No toolchain required. One click installs the jettyd firmware and starts
+      Wi-Fi provisioning — all from your browser.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Before you start</h2>
+    <ul class="checklist">
+      <li>Use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong> (WebSerial is not supported in Firefox or Safari)</li>
+      <li>Connect your ESP32-C3 to your computer with a <strong>data-capable USB cable</strong> (not a charge-only cable)</li>
+      <li>Close any serial monitors or other programs that may be using the port</li>
+      <li>Have your <a href="https://app.jettyd.com/signup" target="_blank" rel="noopener">jettyd fleet token</a> ready for provisioning</li>
+    </ul>
+  </div>
+
+  <div class="flash-section">
+    <div class="chip-badge">ESP32-C3 · jettyd firmware</div>
+
+    <esp-web-install-button manifest="./manifest.json">
+      <button slot="activate">Connect &amp; Flash</button>
+    </esp-web-install-button>
+
+    <p class="browser-note">
+      Requires a browser with <a href="https://caniuse.com/web-serial" target="_blank" rel="noopener">WebSerial API</a> support.
+      If the button does not appear, check that you are using Chrome or Edge.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>After flashing</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Wi-Fi provisioning</strong>
+          <p>The device will prompt you to enter your network credentials via the Improv Wi-Fi dialog that appears automatically after flashing.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Enter your fleet token</strong>
+          <p>Once online, the device calls home. Paste your <code>ft_…</code> token from <a href="https://app.jettyd.com" target="_blank" rel="noopener" style="color:var(--color-teal-lt);text-decoration:none;">app.jettyd.com</a> when prompted.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Device appears online</strong>
+          <p>Head to <a href="https://app.jettyd.com" target="_blank" rel="noopener" style="color:var(--color-teal-lt);text-decoration:none;">app.jettyd.com → Devices</a> — your device should appear within a few seconds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="docs-link">
+    Need the full developer setup?
+    <a href="./QUICKSTART.md">Read the QuickStart guide →</a>
+  </p>
+</main>
+
+<footer>
+  &copy; jettyd — <a href="https://jettyd.com" target="_blank" rel="noopener">jettyd.com</a> &nbsp;·&nbsp;
+  <a href="https://github.com/jettydiot/jettyd-firmware-template" target="_blank" rel="noopener">Source on GitHub</a> &nbsp;·&nbsp;
+  <a href="https://github.com/jettydiot/jettyd-firmware-template/issues" target="_blank" rel="noopener">Report an issue</a>
+</footer>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</body>
+</html>

@@ -4,7 +4,21 @@ Connect an ESP32 device to [jettyd.com](https://jettyd.com) in under 10 minutes.
 
 ---
 
-## Prerequisites
+## Option A — Browser flasher (recommended, no toolchain needed)
+
+Flash jettyd firmware onto an **ESP32-C3** directly from your browser — no ESP-IDF install, no command line.
+
+👉 **[flash.jettyd.com](https://flash.jettyd.com)** — one click, then follow the Wi-Fi provisioning prompts.
+
+Step-by-step instructions: **[FLASH.md](./FLASH.md)**
+
+> Use Option B below if you need a different chip target (ESP32-S3, ESP32-C6), custom drivers, or a full developer environment.
+
+---
+
+## Option B — ESP-IDF (full developer workflow)
+
+### Prerequisites
 
 | Requirement | Notes |
 |---|---|
@@ -17,7 +31,7 @@ Supported targets: **ESP32-S3**, **ESP32-C3**, **ESP32-C6**
 
 ---
 
-## 1. Clone the template
+### 1. Clone the template
 
 ```bash
 git clone https://github.com/jettydiot/jettyd-firmware-template my-device
@@ -26,7 +40,7 @@ cd my-device
 
 ---
 
-## 2. Get your fleet token
+### 2. Get your fleet token
 
 1. Log in to [app.jettyd.com](https://app.jettyd.com)
 2. Navigate to **Fleet → Tokens → New token**
@@ -34,7 +48,7 @@ cd my-device
 
 ---
 
-## 3. Configure your device
+### 3. Configure your device
 
 Open `device.yaml` and fill in the required fields:
 
@@ -55,7 +69,7 @@ target: "esp32s3"   # esp32s3 | esp32c3 | esp32c6
 
 ---
 
-## 4. Set up the SDK
+### 4. Set up the SDK
 
 ```bash
 make setup
@@ -65,7 +79,7 @@ This clones `jettydiot/jettyd-firmware` into `jettyd-sdk/` — the SDK that ship
 
 ---
 
-## 5. Build and flash
+### 5. Build and flash
 
 ```bash
 idf.py build flash monitor
@@ -86,7 +100,7 @@ On first run, `build.py` auto-generates:
 
 ---
 
-## 6. Verify the connection
+### 6. Verify the connection
 
 Once the device boots you should see in the serial monitor:
 
@@ -101,7 +115,7 @@ Head to [app.jettyd.com](https://app.jettyd.com) → **Devices** — your device
 
 ---
 
-## 7. Add drivers
+### 7. Add drivers
 
 Edit the `drivers:` section in `device.yaml` to map your hardware:
 
@@ -124,7 +138,7 @@ Re-run `idf.py build flash` after every `device.yaml` change — codegen runs au
 
 ---
 
-## 8. Run checks before committing
+### 8. Run checks before committing
 
 ```bash
 make check
@@ -134,7 +148,7 @@ Runs codegen validation, format checks, and the SDK unit test suite. All three m
 
 ---
 
-## Telemetry defaults
+### Telemetry defaults
 
 ```yaml
 defaults:
@@ -147,7 +161,7 @@ defaults:
 
 ---
 
-## Troubleshooting
+### Troubleshooting
 
 **Device doesn't appear online**
 - Verify `fleet_token` is correct and hasn't expired
@@ -164,7 +178,7 @@ defaults:
 
 ---
 
-## Next steps
+### Next steps
 
 - 📖 [Full SDK documentation](https://docs.jettyd.com)
 - 🤖 [Connect an AI agent to your fleet](https://docs.jettyd.com/agents)
