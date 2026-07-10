@@ -31,6 +31,11 @@ jobs:
       # which are inputs the CMake build consumes. Running it here (on the host as
       # the 'runner' user) creates them runner-owned before the container build.
       - name: Run build.py codegen
+        env:
+          # Explicit per-leg override — build.py writes CONFIG_IDF_TARGET for this
+          # target instead of the device.yaml default, so the container build sees
+          # a consistent target and legs other than the device.yaml default pass.
+          IDF_TARGET: ${{ matrix.target }}
         run: |
           cd firmware
           python3 build.py device.yaml main/driver_registry.c
