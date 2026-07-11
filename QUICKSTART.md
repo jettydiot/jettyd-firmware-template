@@ -22,12 +22,12 @@ Step-by-step instructions: **[FLASH.md](./FLASH.md)**
 
 | Requirement | Notes |
 |---|---|
-| ESP-IDF v5.2+ | [Installation guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) |
+| ESP-IDF v5.4+ | [Installation guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) |
 | Python 3.9+ | For `build.py` codegen |
 | Git | To clone this template |
 | jettyd account | [Sign up free →](https://app.jettyd.com/signup) |
 
-Supported targets: **ESP32-S3**, **ESP32-C3**, **ESP32-C6**
+Supported targets: **ESP32-S3**, **ESP32-C3**, **ESP32-C6**, **ESP32-P4** (CI build only — camera bring-up pending)
 
 ---
 
@@ -62,7 +62,7 @@ wifi:
   password: "YourNetworkPassword"
 
 name: "my-device"
-target: "esp32s3"   # esp32s3 | esp32c3 | esp32c6
+target: "esp32s3"   # esp32s3 | esp32c3 | esp32c6 | esp32p4
 ```
 
 > ⚠️ Never commit real tokens. Add `device.yaml` to `.gitignore` or use environment variable substitution before committing.
