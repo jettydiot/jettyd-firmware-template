@@ -22,16 +22,9 @@ jobs:
           cd firmware
           git clone https://github.com/jettydiot/jettyd-firmware.git jettyd-sdk
 
-      - name: Configure for ESP32-C3
-        run: |
-          python3 -c "
-import re
-content = open('firmware/device.yaml').read()
-content = re.sub(r'target:\s*\"[^\"]+\"', 'target: \"esp32c3\"', content)
-open('firmware/device.yaml', 'w').write(content)
-print('[ci] device.yaml target set to esp32c3')
-"
-
+      # Target selection: esp-idf-ci-action exports IDF_TARGET=esp32c3 into the
+      # container; build.py and CMakeLists both honor it over device.yaml's
+      # committed target, so no device.yaml rewrite is needed.
       - name: Set up ESP-IDF and build
         uses: espressif/esp-idf-ci-action@v1
         with:
