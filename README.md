@@ -1,6 +1,6 @@
 # jettyd firmware template
 
-Minimal ESP32-S3/C3/C6 starter for [jettyd](https://jettyd.com) — the IoT middleware for AI agents.
+Minimal ESP32-S3/C3/C6/P4 starter for [jettyd](https://jettyd.com) — the IoT middleware for AI agents. Requires ESP-IDF ≥5.4.
 
 ## Quick start
 
@@ -31,8 +31,9 @@ my-device/
 | ESP32-S3 | ✅ Supported |
 | ESP32-C3 | ✅ Supported |
 | ESP32-C6 | ✅ Supported |
+| ESP32-P4 | 🔧 CI build only — camera bring-up pending |
 
-Original ESP32 is **not supported**.
+Original ESP32 is **not supported**. All targets require ESP-IDF ≥5.4.
 
 ## Documentation
 
