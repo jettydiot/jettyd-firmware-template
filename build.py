@@ -171,6 +171,7 @@ DRIVERS = {
     "hcsr04":         ("hcsr04.h",           "hcsr04_config_t",           "hcsr04_register"),
     "ina219":         ("ina219.h",           "ina219_config_t",           "ina219_register"),
     "rgb_led_matrix": ("rgb_led_matrix.h",   "rgb_led_matrix_config_t",   "rgb_led_matrix_register"),
+    "servo":          ("servo.h",            "servo_config_t",            "servo_register"),
 }
 
 
