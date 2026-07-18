@@ -24,6 +24,8 @@ set(EXTRA_COMPONENT_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/ina219
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/led
     ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/button
+    ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/rgb_led_matrix
+    ${CMAKE_CURRENT_SOURCE_DIR}/jettyd-sdk/drivers/servo
 )
 
 # ── Resolve IDF target: explicit IDF_TARGET overrides device.yaml default ────
